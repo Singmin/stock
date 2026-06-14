@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Build output
+dist/
+
+# Local app/runtime data
+.futu_appdata/
+*.log
+
+# Local environment files
+.env
+.env.*
+
+# Nested repository metadata backups
+.git-upload/
+.git.backup-before-root-upload/
+*.git.backup-before-root-upload/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

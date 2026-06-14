@@ -1,0 +1,21 @@
+{
+  "start": "2025-06-12",
+  "end": "2026-06-12",
+  "trading_days": 244,
+  "total_return": -0.018459496225979533,
+  "annualized_return": -0.018472022215632822,
+  "annualized_volatility": 0.19115927441556368,
+  "sharpe_no_risk_free": -0.09663157736975005,
+  "max_drawdown": -0.18610274543374494,
+  "max_drawdown_peak": "2026-01-29",
+  "max_drawdown_trough": "2026-03-23",
+  "calmar": -0.09925711827937062,
+  "win_rate_daily": 0.2581967213114754,
+  "avg_daily_turnover": 0.05737704918032787,
+  "rebalance_count": 52,
+  "avg_holding_count": 1.0081967213114753,
+  "benchmark_total_return": 0.23860711793010347,
+  "benchmark_annualized_return": 0.23878866985538694,
+  "benchmark_annualized_volatility": 0.1406853636856786,
+  "benchmark_max_drawdown": -0.096931104971964
+}

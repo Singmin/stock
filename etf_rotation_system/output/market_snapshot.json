@@ -1,0 +1,87 @@
+{
+  "generated_at": "2026-06-13T19:03:40+08:00",
+  "source": "futu_minute",
+  "warnings": [],
+  "items": [
+    {
+      "code": "510300",
+      "name": "沪深300ETF",
+      "source": "futu_minute",
+      "latest_price": 4.818,
+      "latest_close": 4.818,
+      "prev_close": 4.751,
+      "daily_return": 0.01410229425384113,
+      "updated_at": "2026-06-12 15:00"
+    },
+    {
+      "code": "510500",
+      "name": "中证500ETF",
+      "source": "futu_minute",
+      "latest_price": 8.242,
+      "latest_close": 8.242,
+      "prev_close": 8.133,
+      "daily_return": 0.013402188614287658,
+      "updated_at": "2026-06-12 15:00"
+    },
+    {
+      "code": "159915",
+      "name": "创业板ETF",
+      "source": "futu_minute",
+      "latest_price": 3.846,
+      "latest_close": 3.846,
+      "prev_close": 3.83,
+      "daily_return": 0.004177545691905982,
+      "updated_at": "2026-06-12 15:00"
+    },
+    {
+      "code": "510880",
+      "name": "红利ETF",
+      "source": "futu_minute",
+      "latest_price": 3.303,
+      "latest_close": 3.303,
+      "prev_close": 3.26,
+      "daily_return": 0.01319018404907979,
+      "updated_at": "2026-06-12 15:00"
+    },
+    {
+      "code": "518880",
+      "name": "黄金ETF",
+      "source": "futu_minute",
+      "latest_price": 8.659,
+      "latest_close": 8.659,
+      "prev_close": 8.506,
+      "daily_return": 0.017987303080178707,
+      "updated_at": "2026-06-12 15:00"
+    },
+    {
+      "code": "513100",
+      "name": "纳指ETF",
+      "source": "futu_minute",
+      "latest_price": 2.162,
+      "latest_close": 2.162,
+      "prev_close": 2.13,
+      "daily_return": 0.015023474178403662,
+      "updated_at": "2026-06-12 15:00"
+    },
+    {
+      "code": "513180",
+      "name": "恒生科技ETF",
+      "source": "futu_minute",
+      "latest_price": 0.595,
+      "latest_close": 0.595,
+      "prev_close": 0.589,
+      "daily_return": 0.01018675721561979,
+      "updated_at": "2026-06-12 15:00"
+    },
+    {
+      "code": "511010",
+      "name": "国债ETF",
+      "source": "futu_minute",
+      "latest_price": 141.163,
+      "latest_close": 141.163,
+      "prev_close": 141.138,
+      "daily_return": 0.00017713160169474662,
+      "updated_at": "2026-06-12 15:00"
+    }
+  ]
+}
