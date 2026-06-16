@@ -4,12 +4,66 @@ import { spawn } from "node:child_process";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
+type ScriptResult = {
+  ok: boolean;
+  exitCode: number | null;
+  stdout: string;
+  stderr: string;
+};
+
+function runPythonScript(args: string[]): Promise<ScriptResult> {
+  return new Promise((resolve) => {
+    const child = spawn("python", args, {
+      cwd: __dirname,
+      windowsHide: true
+    });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", (error) => {
+      resolve({ ok: false, exitCode: null, stdout, stderr: stderr || error.message });
+    });
+    child.on("close", (code) => {
+      resolve({ ok: code === 0, exitCode: code, stdout, stderr });
+    });
+  });
+}
+
 function outputDataPlugin(): Plugin {
   const outputRoot = path.resolve(__dirname, "output");
+  let marketRefreshInFlight: Promise<ScriptResult> | null = null;
+  let previewRefreshInFlight: Promise<ScriptResult> | null = null;
 
   return {
     name: "serve-backtest-output",
     configureServer(server) {
+      server.middlewares.use("/api/refresh-market", (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify({ ok: false, error: "Method not allowed" }));
+          return;
+        }
+
+        if (!marketRefreshInFlight) {
+          marketRefreshInFlight = runPythonScript(["refresh_intraday.py", "--data-source", "futu"]).finally(() => {
+            marketRefreshInFlight = null;
+          });
+        }
+
+        marketRefreshInFlight.then((result) => {
+          res.statusCode = result.ok ? 200 : 500;
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(result));
+        });
+      });
+
       server.middlewares.use("/api/futu-sim-preview", (req, res) => {
         const rawUrl = req.url || "/";
         const url = new URL(rawUrl, "http://127.0.0.1");
@@ -30,28 +84,16 @@ function outputDataPlugin(): Plugin {
           return;
         }
 
-        const child = spawn("python", ["generate_futu_sim_orders.py", "--mode", mode, "--cash-buffer", "0.05"], {
-          cwd: __dirname,
-          windowsHide: true
-        });
-        let stdout = "";
-        let stderr = "";
+        if (!previewRefreshInFlight) {
+          previewRefreshInFlight = runPythonScript(["generate_futu_sim_orders.py", "--mode", mode, "--cash-buffer", "0.05"]).finally(() => {
+            previewRefreshInFlight = null;
+          });
+        }
 
-        child.stdout.on("data", (chunk) => {
-          stdout += chunk.toString();
-        });
-        child.stderr.on("data", (chunk) => {
-          stderr += chunk.toString();
-        });
-        child.on("error", (error) => {
-          res.statusCode = 500;
-          res.setHeader("Content-Type", "application/json; charset=utf-8");
-          res.end(JSON.stringify({ ok: false, mode, error: error.message, stdout, stderr }));
-        });
-        child.on("close", (code) => {
+        previewRefreshInFlight.then((result) => {
           res.statusCode = 200;
           res.setHeader("Content-Type", "application/json; charset=utf-8");
-          res.end(JSON.stringify({ ok: code === 0, mode, exitCode: code, stdout, stderr }));
+          res.end(JSON.stringify({ ...result, mode }));
         });
       });
 
@@ -81,6 +123,7 @@ function outputDataPlugin(): Plugin {
               ? "text/csv; charset=utf-8"
               : "application/octet-stream";
         res.setHeader("Content-Type", type);
+        res.setHeader("Cache-Control", "no-store");
         fs.createReadStream(filePath).pipe(res);
       });
     }

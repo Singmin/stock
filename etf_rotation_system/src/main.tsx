@@ -279,6 +279,8 @@ type LinePoint = {
   value: number;
 };
 
+const AUTO_REFRESH_INTERVAL_MS = 5000;
+
 const ETF_NAMES: Record<string, string> = {
   "510300": "沪深300ETF",
   "510500": "中证500ETF",
@@ -360,15 +362,15 @@ async function loadDashboardData() {
     futuSimLastExecution
   ] =
     await Promise.all([
-    fetch("/output/metrics.json").then((res) => res.json() as Promise<Metrics>),
-    fetch("/output/run_meta.json").then((res) => res.json() as Promise<RunMeta>),
-    fetch("/output/data_quality.json").then((res) => res.json() as Promise<DataQualityRow[]>),
-    fetch("/output/price_series.json").then((res) => res.json() as Promise<PriceSeries>),
-    fetch("/output/intraday_series.json").then((res) => res.json() as Promise<IntradaySeries>),
-    fetch("/output/market_snapshot.json").then((res) => res.json() as Promise<MarketSnapshot>),
-    fetch("/output/equity_curve.csv").then((res) => res.text()),
-    fetch("/output/daily_weights.csv").then((res) => res.text()),
-    fetch("/output/rebalance_log.csv").then((res) => res.text()),
+    fetchFresh("/output/metrics.json").then((res) => res.json() as Promise<Metrics>),
+    fetchFresh("/output/run_meta.json").then((res) => res.json() as Promise<RunMeta>),
+    fetchFresh("/output/data_quality.json").then((res) => res.json() as Promise<DataQualityRow[]>),
+    fetchFresh("/output/price_series.json").then((res) => res.json() as Promise<PriceSeries>),
+    fetchFresh("/output/intraday_series.json").then((res) => res.json() as Promise<IntradaySeries>),
+    fetchFresh("/output/market_snapshot.json").then((res) => res.json() as Promise<MarketSnapshot>),
+    fetchFresh("/output/equity_curve.csv").then((res) => res.text()),
+    fetchFresh("/output/daily_weights.csv").then((res) => res.text()),
+    fetchFresh("/output/rebalance_log.csv").then((res) => res.text()),
     optionalJson<TradeSignal>("/output/trade_signal.json", null),
     optionalJson<FutuSimAccount>("/output/futu_sim_account.json", null),
     optionalJson<FutuSimPositions>("/output/futu_sim_positions.json", null),
@@ -396,8 +398,16 @@ async function loadDashboardData() {
   };
 }
 
+function cacheBustUrl(url: string) {
+  return `${url}${url.includes("?") ? "&" : "?"}_=${Date.now()}`;
+}
+
+function fetchFresh(url: string, init?: RequestInit) {
+  return fetch(cacheBustUrl(url), { cache: "no-store", ...init });
+}
+
 async function optionalJson<T>(url: string, fallback: T | null): Promise<T | null> {
-  const res = await fetch(url);
+  const res = await fetchFresh(url);
   if (!res.ok) return fallback;
   return res.json() as Promise<T>;
 }
@@ -702,6 +712,9 @@ function SimTradingPanel({
   futuSimRecentOrders,
   futuSimLastExecution,
   previewModeLoading,
+  portfolioRefreshing,
+  lastPortfolioRefresh,
+  portfolioRefreshError,
   onPreviewModeChange
 }: {
   tradeSignal: TradeSignal | null;
@@ -711,6 +724,9 @@ function SimTradingPanel({
   futuSimRecentOrders: FutuOrderSnapshot | null;
   futuSimLastExecution: FutuLastExecution | null;
   previewModeLoading: PreviewMode | null;
+  portfolioRefreshing: boolean;
+  lastPortfolioRefresh: string | null;
+  portfolioRefreshError: string | null;
   onPreviewModeChange: (mode: PreviewMode) => void;
 }) {
   const account = futuSimAccount?.selected_account;
@@ -755,8 +771,18 @@ function SimTradingPanel({
         <div className="toolbar-inline">
           <FileCheck2 size={16} />
           <span className="muted">{futuSimAccount?.generated_at ? `预检 ${futuSimAccount.generated_at}` : "尚未预检"}</span>
+          <span className="live-dot" aria-hidden="true" />
+          <span className="muted">
+            {portfolioRefreshing ? "持仓刷新中" : lastPortfolioRefresh ? `持仓刷新 ${lastPortfolioRefresh}` : "5秒自动刷新"}
+          </span>
         </div>
       </div>
+      {portfolioRefreshError && (
+        <div className="market-warning sim-refresh-warning">
+          <AlertTriangle size={15} />
+          <span>{portfolioRefreshError}</span>
+        </div>
+      )}
       <div className="sim-grid">
         <article className="sim-card">
           <div className="sim-card-head">
@@ -843,7 +869,7 @@ function SimTradingPanel({
               key={mode.key}
               type="button"
               className={activePreviewMode === mode.key ? "active" : ""}
-              disabled={previewModeLoading !== null}
+              disabled={previewModeLoading !== null || portfolioRefreshing}
               onClick={() => onPreviewModeChange(mode.key)}
               title={mode.note}
             >
@@ -1015,6 +1041,16 @@ function App() {
   const [marketMode, setMarketMode] = React.useState<MarketChartMode>("daily");
   const [marketQuery, setMarketQuery] = React.useState("");
   const [previewModeLoading, setPreviewModeLoading] = React.useState<PreviewMode | null>(null);
+  const [marketRefreshing, setMarketRefreshing] = React.useState(false);
+  const [lastMarketRefresh, setLastMarketRefresh] = React.useState<string | null>(null);
+  const [marketRefreshError, setMarketRefreshError] = React.useState<string | null>(null);
+  const marketRefreshRunning = React.useRef(false);
+  const [portfolioRefreshing, setPortfolioRefreshing] = React.useState(false);
+  const [lastPortfolioRefresh, setLastPortfolioRefresh] = React.useState<string | null>(null);
+  const [portfolioRefreshError, setPortfolioRefreshError] = React.useState<string | null>(null);
+  const portfolioRefreshRunning = React.useRef(false);
+  const dataReady = data !== null;
+  const activePreviewMode = data?.futuSimOrderPreview?.mode?.selected ?? "observe";
 
   const reload = React.useCallback(() => {
     setError(null);
@@ -1026,6 +1062,67 @@ function App() {
   React.useEffect(() => {
     reload();
   }, [reload]);
+
+  const refreshMarket = React.useCallback(async () => {
+    if (marketRefreshRunning.current) return;
+    marketRefreshRunning.current = true;
+    setMarketRefreshing(true);
+    setMarketRefreshError(null);
+    try {
+      const response = await fetch("/api/refresh-market", { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.ok === false) {
+        throw new Error(result.stderr || result.error || "行情刷新失败");
+      }
+      const nextData = await loadDashboardData();
+      setData(nextData);
+      setLastMarketRefresh(new Date().toLocaleTimeString("zh-CN", { hour12: false }));
+    } catch (err) {
+      setMarketRefreshError(err instanceof Error ? err.message : String(err));
+    } finally {
+      marketRefreshRunning.current = false;
+      setMarketRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (marketMode !== "intraday") return;
+    refreshMarket();
+    const timer = window.setInterval(refreshMarket, AUTO_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [marketMode, refreshMarket]);
+
+  const refreshPortfolio = React.useCallback(async (mode: PreviewMode) => {
+    if (portfolioRefreshRunning.current) return;
+    portfolioRefreshRunning.current = true;
+    setPortfolioRefreshing(true);
+    setPortfolioRefreshError(null);
+    try {
+      const response = await fetch(`/api/futu-sim-preview?mode=${encodeURIComponent(mode)}`, { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.stderr || result.error || "持仓刷新接口不可用，请重启 npm run dev 后再试。");
+      }
+      const nextData = await loadDashboardData();
+      setData(nextData);
+      setLastPortfolioRefresh(new Date().toLocaleTimeString("zh-CN", { hour12: false }));
+      if (result.stderr) {
+        setPortfolioRefreshError(result.stderr);
+      }
+    } catch (err) {
+      setPortfolioRefreshError(err instanceof Error ? err.message : String(err));
+    } finally {
+      portfolioRefreshRunning.current = false;
+      setPortfolioRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!dataReady) return;
+    refreshPortfolio(activePreviewMode);
+    const timer = window.setInterval(() => refreshPortfolio(activePreviewMode), AUTO_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [activePreviewMode, dataReady, refreshPortfolio]);
 
   const generatePreview = React.useCallback(async (mode: PreviewMode) => {
     setError(null);
@@ -1325,6 +1422,23 @@ function App() {
               <span className="muted">
                 分时来源：{marketSourceLabel(activeIntraday?.source || marketSnapshot.source)}
               </span>
+              {marketMode === "intraday" && (
+                <>
+                  <span className="live-dot" aria-hidden="true" />
+                  <span className="muted">
+                    {marketRefreshing ? "刷新中" : lastMarketRefresh ? `上次刷新 ${lastMarketRefresh}` : "5秒自动刷新"}
+                  </span>
+                </>
+              )}
+              <button
+                type="button"
+                className="icon-button small"
+                title="立即刷新分时行情"
+                onClick={refreshMarket}
+                disabled={marketRefreshing}
+              >
+                <RefreshCw size={15} className={marketRefreshing ? "spin" : ""} />
+              </button>
             </div>
           </div>
           <div className="market-layout">
@@ -1417,6 +1531,12 @@ function App() {
                   <span>{marketSnapshot.warnings[0]}</span>
                 </div>
               )}
+              {marketRefreshError && (
+                <div className="market-warning">
+                  <AlertTriangle size={15} />
+                  <span>{marketRefreshError}</span>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -1429,6 +1549,9 @@ function App() {
           futuSimRecentOrders={futuSimRecentOrders}
           futuSimLastExecution={futuSimLastExecution}
           previewModeLoading={previewModeLoading}
+          portfolioRefreshing={portfolioRefreshing}
+          lastPortfolioRefresh={lastPortfolioRefresh}
+          portfolioRefreshError={portfolioRefreshError}
           onPreviewModeChange={generatePreview}
         />
 

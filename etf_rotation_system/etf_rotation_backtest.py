@@ -808,9 +808,9 @@ def build_market_snapshot(prices: pd.DataFrame, intraday_series: dict, source: s
         close = prices[code].dropna()
         latest_close = float(close.iloc[-1]) if len(close) else None
         prev_close = float(close.iloc[-2]) if len(close) > 1 else None
-        daily_return = latest_close / prev_close - 1 if latest_close and prev_close else None
         minute_points = intraday_series.get(code, {}).get("points", [])
         latest_minute = minute_points[-1]["price"] if minute_points else latest_close
+        daily_return = latest_minute / prev_close - 1 if latest_minute and prev_close else None
         items.append(
             {
                 "code": code,
