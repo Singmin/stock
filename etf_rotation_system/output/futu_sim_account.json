@@ -1,0 +1,87 @@
+{
+  "generated_at": "2026-06-15T01:12:36+08:00",
+  "ok": true,
+  "host": "127.0.0.1",
+  "port": 11111,
+  "sdk_version": "10.7.6708",
+  "opend_reachable": true,
+  "target_env": "SIMULATE",
+  "target_market": "CN",
+  "selected_account": {
+    "acc_id": 16909725,
+    "acc_type": "CASH",
+    "acc_role": "N/A",
+    "trd_env": "SIMULATE",
+    "card_num": "N/A",
+    "security_firm": "N/A",
+    "trdmarket_auth": [
+      "CN"
+    ],
+    "acc_status": "ACTIVE",
+    "sim_acc_type": "STOCK",
+    "competition_acc_name": "N/A"
+  },
+  "accounts": [
+    {
+      "acc_id": 16909731,
+      "acc_type": "CASH",
+      "acc_role": "N/A",
+      "trd_env": "SIMULATE",
+      "card_num": "N/A",
+      "security_firm": "N/A",
+      "trdmarket_auth": [
+        "HK"
+      ],
+      "acc_status": "ACTIVE",
+      "sim_acc_type": "STOCK",
+      "competition_acc_name": "N/A"
+    },
+    {
+      "acc_id": 16909725,
+      "acc_type": "CASH",
+      "acc_role": "N/A",
+      "trd_env": "SIMULATE",
+      "card_num": "N/A",
+      "security_firm": "N/A",
+      "trdmarket_auth": [
+        "CN"
+      ],
+      "acc_status": "ACTIVE",
+      "sim_acc_type": "STOCK",
+      "competition_acc_name": "N/A"
+    },
+    {
+      "acc_id": 16909726,
+      "acc_type": "MARGIN",
+      "acc_role": "N/A",
+      "trd_env": "SIMULATE",
+      "card_num": "N/A",
+      "security_firm": "N/A",
+      "trdmarket_auth": [
+        "HK"
+      ],
+      "acc_status": "ACTIVE",
+      "sim_acc_type": "OPTION",
+      "competition_acc_name": "N/A"
+    },
+    {
+      "acc_id": 16909560,
+      "acc_type": "MARGIN",
+      "acc_role": "N/A",
+      "trd_env": "SIMULATE",
+      "card_num": "N/A",
+      "security_firm": "N/A",
+      "trdmarket_auth": [
+        "US"
+      ],
+      "acc_status": "ACTIVE",
+      "sim_acc_type": "STOCK_AND_OPTION",
+      "competition_acc_name": "N/A"
+    }
+  ],
+  "warnings": [
+    "3 SIMULATE account(s) do not include CN/SH/SZ permission."
+  ],
+  "errors": [],
+  "message": "Futu SIMULATE account is ready."
+}

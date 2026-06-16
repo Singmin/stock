@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-06-15T01:17:40+08:00",
+  "requested_data_source": "futu",
+  "actual_data_mode": "futu_cached",
+  "is_synthetic": false,
+  "config": {
+    "start": "2025-06-15",
+    "end": "2026-06-15",
+    "data_source": "futu",
+    "rebalance": "W-FRI",
+    "top_n": 2,
+    "fee_rate": 0.0008,
+    "risk_penalty": 0.15,
+    "min_momentum_window": 120,
+    "clear_proxy": false,
+    "futu_host": "127.0.0.1",
+    "futu_port": 11111
+  },
+  "universe": [
+    {
+      "code": "510300",
+      "name": "沪深300ETF"
+    },
+    {
+      "code": "510500",
+      "name": "中证500ETF"
+    },
+    {
+      "code": "159915",
+      "name": "创业板ETF"
+    },
+    {
+      "code": "510880",
+      "name": "红利ETF"
+    },
+    {
+      "code": "518880",
+      "name": "黄金ETF"
+    },
+    {
+      "code": "513100",
+      "name": "纳指ETF"
+    },
+    {
+      "code": "513180",
+      "name": "恒生科技ETF"
+    },
+    {
+      "code": "511010",
+      "name": "国债ETF"
+    }
+  ],
+  "source_status": {
+    "510300": "futu_cache_hit",
+    "510500": "futu_cache_hit",
+    "159915": "futu_cache_hit",
+    "510880": "futu_cache_hit",
+    "518880": "futu_cache_hit",
+    "513100": "futu_cache_hit",
+    "513180": "futu_cache_hit",
+    "511010": "futu_cache_hit"
+  },
+  "quality_counts": {
+    "ok": 8
+  },
+  "warning_count": 0,
+  "error_count": 0,
+  "quality_rules": {
+    "min_data_coverage": 0.75,
+    "extreme_return_threshold": 0.12
+  }
+}

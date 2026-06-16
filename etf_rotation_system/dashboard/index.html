@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ETF Rotation Dashboard</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #18202a;
+      --muted: #677282;
+      --line: #dde3ea;
+      --blue: #2563eb;
+      --teal: #0f766e;
+      --red: #b42318;
+      --amber: #b7791f;
+      --green: #047857;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    header {
+      background: #111827;
+      color: #fff;
+      border-bottom: 1px solid #0b1220;
+    }
+
+    .topbar {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 240px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      color: #aab4c3;
+      font-size: 12px;
+    }
+
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .pill {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef2f7;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px 22px 34px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 13px 14px;
+      min-height: 86px;
+    }
+
+    .metric label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 9px;
+    }
+
+    .metric strong {
+      font-size: 24px;
+      line-height: 1.1;
+      letter-spacing: 0;
+      font-weight: 750;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(330px, 0.9fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 13px 15px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .segmented {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+
+    .segmented button {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      padding: 7px 10px;
+      min-width: 72px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .segmented button:last-child {
+      border-right: 0;
+    }
+
+    .segmented button.active {
+      background: #e8f0ff;
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .chart-wrap {
+      height: 430px;
+      padding: 12px 14px 16px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .holdings {
+      padding: 14px 15px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .holding-row {
+      display: grid;
+      grid-template-columns: 78px 1fr 54px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-track {
+      height: 9px;
+      background: #eef2f7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: var(--teal);
+      border-radius: 999px;
+    }
+
+    .table-wrap {
+      max-height: 340px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 1;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 2px;
+      padding: 0 15px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+
+    .tab {
+      border: 0;
+      background: transparent;
+      padding: 11px 13px;
+      cursor: pointer;
+      color: var(--muted);
+      font: inherit;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+      color: var(--blue);
+      border-bottom-color: var(--blue);
+      font-weight: 700;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .pos {
+      color: var(--green);
+    }
+
+    .neg {
+      color: var(--red);
+    }
+
+    .warn {
+      color: var(--amber);
+    }
+
+    .full {
+      margin-top: 14px;
+    }
+
+    .empty {
+      padding: 22px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1100px) {
+      .metric-grid {
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .status {
+        justify-content: flex-start;
+      }
+
+      main {
+        padding: 14px;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .metric strong {
+        font-size: 20px;
+      }
+
+      .chart-wrap {
+        height: 330px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <h1>ETF Rotation Dashboard</h1>
+        <span>动量轮动回测监控面板</span>
+      </div>
+      <div class="status">
+        <span class="pill" id="periodPill">读取中</span>
+        <span class="pill" id="daysPill">交易日 --</span>
+        <span class="pill" id="rebalancePill">调仓 --</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="metric-grid" id="metricGrid"></section>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">净值曲线</h2>
+          <div class="toolbar">
+            <div class="segmented" aria-label="chart mode">
+              <button type="button" class="active" data-chart="equity">净值</button>
+              <button type="button" data-chart="drawdown">回撤</button>
+              <button type="button" data-chart="turnover">换手</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart" width="1100" height="520"></canvas>
+        </div>
+      </div>
+
+      <aside class="side-stack">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">最新持仓</h2>
+            <span class="muted" id="weightDate">--</span>
+          </div>
+          <div class="holdings" id="holdings"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">最近调仓</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 34%;">日期</th>
+                  <th>标的</th>
+                </tr>
+              </thead>
+              <tbody id="recentRebalances"></tbody>
+            </table>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel full">
+      <div class="tabs">
+        <button class="tab active" type="button" data-tab="rebalance">调仓记录</button>
+        <button class="tab" type="button" data-tab="returns">收益明细</button>
+      </div>
+      <div class="table-wrap" id="detailTable"></div>
+    </section>
+  </main>
+
+  <script>
+    const ETF_NAMES = {
+      "510300": "沪深300ETF",
+      "510500": "中证500ETF",
+      "159915": "创业板ETF",
+      "510880": "红利ETF",
+      "518880": "黄金ETF",
+      "513100": "纳指ETF",
+      "513180": "恒生科技ETF",
+      "511010": "国债ETF"
+    };
+
+    const state = {
+      metrics: null,
+      equity: [],
+      weights: [],
+      rebalances: [],
+      chartMode: "equity",
+      tab: "rebalance"
+    };
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let field = "";
+      let quoted = false;
+      for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+        const next = text[i + 1];
+        if (quoted) {
+          if (ch === '"' && next === '"') {
+            field += '"';
+            i += 1;
+          } else if (ch === '"') {
+            quoted = false;
+          } else {
+            field += ch;
+          }
+        } else if (ch === '"') {
+          quoted = true;
+        } else if (ch === ",") {
+          row.push(field);
+          field = "";
+        } else if (ch === "\n") {
+          row.push(field);
+          rows.push(row);
+          row = [];
+          field = "";
+        } else if (ch !== "\r") {
+          field += ch;
+        }
+      }
+      if (field.length || row.length) {
+        row.push(field);
+        rows.push(row);
+      }
+      const header = rows.shift() || [];
+      return rows.filter((r) => r.some(Boolean)).map((r) => {
+        const obj = {};
+        header.forEach((h, idx) => {
+          obj[h || "date"] = r[idx] || "";
+        });
+        return obj;
+      });
+    }
+
+    function fmtPct(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return "--";
+      return `${(num * 100).toFixed(2)}%`;
+    }
+
+    function fmtNum(value, digits = 2) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return "--";
+      return num.toFixed(digits);
+    }
+
+    function clsFor(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return "";
+      return num >= 0 ? "pos" : "neg";
+    }
+
+    async function loadData() {
+      const [metrics, equityText, weightsText, rebalanceText] = await Promise.all([
+        fetch("../output/metrics.json").then((r) => r.json()),
+        fetch("../output/equity_curve.csv").then((r) => r.text()),
+        fetch("../output/daily_weights.csv").then((r) => r.text()),
+        fetch("../output/rebalance_log.csv").then((r) => r.text())
+      ]);
+      state.metrics = metrics;
+      state.equity = parseCSV(equityText);
+      state.weights = parseCSV(weightsText);
+      state.rebalances = parseCSV(rebalanceText);
+      renderAll();
+    }
+
+    function renderAll() {
+      renderHeader();
+      renderMetrics();
+      renderHoldings();
+      renderRecentRebalances();
+      renderDetailTable();
+      drawChart();
+    }
+
+    function renderHeader() {
+      const m = state.metrics;
+      document.getElementById("periodPill").textContent = `${m.start} 至 ${m.end}`;
+      document.getElementById("daysPill").textContent = `交易日 ${m.trading_days}`;
+      document.getElementById("rebalancePill").textContent = `调仓 ${m.rebalance_count} 次`;
+    }
+
+    function renderMetrics() {
+      const m = state.metrics;
+      const items = [
+        ["总收益", fmtPct(m.total_return), `基准 ${fmtPct(m.benchmark_total_return)}`, m.total_return],
+        ["年化收益", fmtPct(m.annualized_return), `基准 ${fmtPct(m.benchmark_annualized_return)}`, m.annualized_return],
+        ["最大回撤", fmtPct(m.max_drawdown), `${m.max_drawdown_peak} 至 ${m.max_drawdown_trough}`, m.max_drawdown],
+        ["夏普比率", fmtNum(m.sharpe_no_risk_free), "未扣无风险收益", m.sharpe_no_risk_free],
+        ["年化波动", fmtPct(m.annualized_volatility), `基准 ${fmtPct(m.benchmark_annualized_volatility)}`, null],
+        ["平均换手", fmtPct(m.avg_daily_turnover), `平均持仓 ${fmtNum(m.avg_holding_count)} 只`, null]
+      ];
+      document.getElementById("metricGrid").innerHTML = items.map(([label, value, sub, raw]) => `
+        <div class="metric">
+          <label>${label}</label>
+          <strong class="${raw === null ? "" : clsFor(raw)}">${value}</strong>
+          <small>${sub}</small>
+        </div>
+      `).join("");
+    }
+
+    function renderHoldings() {
+      const latest = [...state.weights].reverse().find((row) => {
+        return Object.keys(row).some((k) => k !== "date" && Number(row[k]) > 0);
+      });
+      const host = document.getElementById("holdings");
+      if (!latest) {
+        host.innerHTML = `<div class="empty">当前为空仓</div>`;
+        return;
+      }
+      document.getElementById("weightDate").textContent = latest.date;
+      const rows = Object.keys(latest)
+        .filter((k) => k !== "date" && Number(latest[k]) > 0)
+        .sort((a, b) => Number(latest[b]) - Number(latest[a]))
+        .map((code) => {
+          const weight = Number(latest[code]);
+          return `
+            <div class="holding-row">
+              <strong>${code}</strong>
+              <div>
+                <div class="muted">${ETF_NAMES[code] || code}</div>
+                <div class="bar-track"><div class="bar" style="width: ${Math.max(3, weight * 100)}%;"></div></div>
+              </div>
+              <span>${fmtPct(weight)}</span>
+            </div>
+          `;
+        });
+      host.innerHTML = rows.join("");
+    }
+
+    function renderRecentRebalances() {
+      const rows = state.rebalances.slice(-12).reverse().map((row) => `
+        <tr>
+          <td>${row.date}</td>
+          <td>${formatSelected(row.selected)}</td>
+        </tr>
+      `);
+      document.getElementById("recentRebalances").innerHTML = rows.join("");
+    }
+
+    function formatSelected(value) {
+      if (!value || value === "CASH") return `<span class="warn">CASH</span>`;
+      return value.split(",").map((code) => `${code} ${ETF_NAMES[code] || ""}`).join("<br>");
+    }
+
+    function renderDetailTable() {
+      const host = document.getElementById("detailTable");
+      if (state.tab === "rebalance") {
+        const rows = state.rebalances.slice(-120).reverse().map((row) => `
+          <tr>
+            <td>${row.date}</td>
+            <td>${formatSelected(row.selected)}</td>
+            <td><code>${escapeHtml(row.scores || "{}")}</code></td>
+          </tr>
+        `).join("");
+        host.innerHTML = `
+          <table>
+            <thead><tr><th style="width: 18%;">日期</th><th style="width: 30%;">持仓</th><th>分数</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      } else {
+        const rows = state.equity.slice(-160).reverse().map((row) => `
+          <tr>
+            <td>${row.date}</td>
+            <td>${fmtNum(row.strategy, 4)}</td>
+            <td>${fmtNum(row.benchmark_equal_weight, 4)}</td>
+            <td class="${clsFor(row.strategy_daily_return)}">${fmtPct(row.strategy_daily_return)}</td>
+            <td>${fmtPct(row.turnover)}</td>
+          </tr>
+        `).join("");
+        host.innerHTML = `
+          <table>
+            <thead><tr><th>日期</th><th>策略净值</th><th>基准净值</th><th>日收益</th><th>换手</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById("chart");
+      const ctx = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
+
+      const pad = { left: 58, right: 18, top: 20, bottom: 38 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+      const data = state.equity;
+      if (!data.length) return;
+
+      let series;
+      if (state.chartMode === "equity") {
+        series = [
+          { name: "策略", color: "#2563eb", values: data.map((r) => Number(r.strategy)) },
+          { name: "等权基准", color: "#0f766e", values: data.map((r) => Number(r.benchmark_equal_weight)) }
+        ];
+      } else if (state.chartMode === "drawdown") {
+        series = [
+          { name: "策略回撤", color: "#b42318", values: drawdownValues(data.map((r) => Number(r.strategy))) },
+          { name: "基准回撤", color: "#b7791f", values: drawdownValues(data.map((r) => Number(r.benchmark_equal_weight))) }
+        ];
+      } else {
+        series = [
+          { name: "每日换手", color: "#2563eb", values: data.map((r) => Number(r.turnover)) }
+        ];
+      }
+
+      const all = series.flatMap((s) => s.values).filter(Number.isFinite);
+      let min = Math.min(...all);
+      let max = Math.max(...all);
+      if (min === max) {
+        min -= 0.1;
+        max += 0.1;
+      }
+      const span = max - min;
+      min -= span * 0.08;
+      max += span * 0.08;
+
+      drawGrid(ctx, pad, plotW, plotH, min, max, data);
+      series.forEach((s) => drawLine(ctx, s.values, s.color, pad, plotW, plotH, min, max));
+      drawLegend(ctx, series, pad.left + 8, pad.top + 8);
+    }
+
+    function drawdownValues(values) {
+      let peak = values[0] || 1;
+      return values.map((v) => {
+        peak = Math.max(peak, v);
+        return v / peak - 1;
+      });
+    }
+
+    function drawGrid(ctx, pad, plotW, plotH, min, max, data) {
+      ctx.strokeStyle = "#e5eaf0";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#677282";
+      ctx.font = "12px Segoe UI, Arial";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i = 0; i <= 5; i += 1) {
+        const y = pad.top + plotH * i / 5;
+        const value = max - (max - min) * i / 5;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+        const label = state.chartMode === "equity" ? value.toFixed(2) : fmtPct(value);
+        ctx.fillText(label, pad.left - 9, y);
+      }
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      const steps = 5;
+      for (let i = 0; i <= steps; i += 1) {
+        const idx = Math.min(data.length - 1, Math.round((data.length - 1) * i / steps));
+        const x = pad.left + plotW * i / steps;
+        ctx.fillText((data[idx].date || "").slice(0, 7), x, pad.top + plotH + 12);
+      }
+    }
+
+    function drawLine(ctx, values, color, pad, plotW, plotH, min, max) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      values.forEach((v, idx) => {
+        const x = pad.left + (plotW * idx) / Math.max(1, values.length - 1);
+        const y = pad.top + plotH - ((v - min) / (max - min)) * plotH;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function drawLegend(ctx, series, x, y) {
+      ctx.font = "12px Segoe UI, Arial";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      let offset = 0;
+      series.forEach((s) => {
+        ctx.fillStyle = s.color;
+        ctx.fillRect(x + offset, y - 5, 18, 4);
+        ctx.fillStyle = "#18202a";
+        ctx.fillText(s.name, x + offset + 25, y - 3);
+        offset += ctx.measureText(s.name).width + 72;
+      });
+    }
+
+    document.querySelectorAll("[data-chart]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-chart]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.chartMode = btn.dataset.chart;
+        drawChart();
+      });
+    });
+
+    document.querySelectorAll("[data-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-tab]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.tab = btn.dataset.tab;
+        renderDetailTable();
+      });
+    });
+
+    window.addEventListener("resize", () => drawChart());
+
+    loadData().catch((err) => {
+      document.querySelector("main").innerHTML = `<div class="panel empty">面板读取失败：${escapeHtml(err.message)}</div>`;
+      console.error(err);
+    });
+  </script>
+</body>
+</html>

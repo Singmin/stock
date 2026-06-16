@@ -1,0 +1,91 @@
+{
+  "generated_at": "2026-06-15T01:17:41+08:00",
+  "signal_date": "2026-06-12",
+  "suggested_rebalance_date": "2026-06-12",
+  "data_mode": "futu_cached",
+  "trading_env": "SIMULATE",
+  "market": "CN",
+  "config": {
+    "start": "2025-06-15",
+    "end": "2026-06-15",
+    "data_source": "futu",
+    "rebalance": "W-FRI",
+    "top_n": 2,
+    "fee_rate": 0.0008,
+    "risk_penalty": 0.15,
+    "min_momentum_window": 120,
+    "clear_proxy": false,
+    "futu_host": "127.0.0.1",
+    "futu_port": 11111
+  },
+  "selected": [
+    "SZ.159915",
+    "SH.513100"
+  ],
+  "targets": [
+    {
+      "code": "510300",
+      "futu_code": "SH.510300",
+      "name": "沪深300ETF",
+      "target_weight": 0.0,
+      "latest_price": 4.818,
+      "selected": false
+    },
+    {
+      "code": "510500",
+      "futu_code": "SH.510500",
+      "name": "中证500ETF",
+      "target_weight": 0.0,
+      "latest_price": 8.242,
+      "selected": false
+    },
+    {
+      "code": "159915",
+      "futu_code": "SZ.159915",
+      "name": "创业板ETF",
+      "target_weight": 0.5,
+      "latest_price": 3.846,
+      "selected": true
+    },
+    {
+      "code": "510880",
+      "futu_code": "SH.510880",
+      "name": "红利ETF",
+      "target_weight": 0.0,
+      "latest_price": 3.303,
+      "selected": false
+    },
+    {
+      "code": "518880",
+      "futu_code": "SH.518880",
+      "name": "黄金ETF",
+      "target_weight": 0.0,
+      "latest_price": 8.659,
+      "selected": false
+    },
+    {
+      "code": "513100",
+      "futu_code": "SH.513100",
+      "name": "纳指ETF",
+      "target_weight": 0.5,
+      "latest_price": 2.162,
+      "selected": true
+    },
+    {
+      "code": "513180",
+      "futu_code": "SH.513180",
+      "name": "恒生科技ETF",
+      "target_weight": 0.0,
+      "latest_price": 0.595,
+      "selected": false
+    },
+    {
+      "code": "511010",
+      "futu_code": "SH.511010",
+      "name": "国债ETF",
+      "target_weight": 0.0,
+      "latest_price": 141.163,
+      "selected": false
+    }
+  ]
+}
